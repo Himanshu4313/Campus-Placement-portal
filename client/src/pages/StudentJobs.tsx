@@ -41,6 +41,14 @@ const StudentJobs: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [resumes, setResumes] = useState<Resume[]>([]);
+  const [bookmarks, setBookmarks] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('bookmarked_jobs') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [filterBookmarkedOnly, setFilterBookmarkedOnly] = useState(false);
   
   // Filter States
   const [selectedType, setSelectedType] = useState('');
@@ -57,6 +65,15 @@ const StudentJobs: React.FC = () => {
     fetchJobs();
     fetchResumes();
   }, []);
+
+  const toggleBookmark = (jobId: string) => {
+    const updated = bookmarks.includes(jobId)
+      ? bookmarks.filter(id => id !== jobId)
+      : [...bookmarks, jobId];
+    setBookmarks(updated);
+    localStorage.setItem('bookmarked_jobs', JSON.stringify(updated));
+    toast.success(bookmarks.includes(jobId) ? 'Job removed from bookmarks' : 'Job bookmarked!');
+  };
 
   const fetchJobs = async (search = searchQuery, type = selectedType, workMode = selectedWorkMode, loc = locationQuery) => {
     setLoading(true);
@@ -130,6 +147,11 @@ const StudentJobs: React.FC = () => {
     }
   };
 
+  // Client-side filter for Bookmarks
+  const displayedJobs = filterBookmarkedOnly
+    ? jobs.filter(job => bookmarks.includes(job._id))
+    : jobs;
+
   return (
     <div className="flex flex-col gap-8 w-full pb-10 animate-in fade-in duration-500">
       
@@ -165,7 +187,7 @@ const StudentJobs: React.FC = () => {
 
           {/* Filters Area */}
           {showFilters && (
-            <Card className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-300">
+            <Card className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-300">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold">Job Type</label>
                 <select 
@@ -217,6 +239,19 @@ const StudentJobs: React.FC = () => {
                   }}
                 />
               </div>
+
+              <div className="flex flex-col justify-center gap-2">
+                <label className="text-sm font-semibold">Saved Opportunities</label>
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer mt-1">
+                  <input 
+                    type="checkbox"
+                    checked={filterBookmarkedOnly}
+                    onChange={(e) => setFilterBookmarkedOnly(e.target.checked)}
+                    className="rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span>Show Bookmarked Only</span>
+                </label>
+              </div>
             </Card>
           )}
         </form>
@@ -227,7 +262,7 @@ const StudentJobs: React.FC = () => {
         <h2 className="text-xl font-bold flex items-center gap-2">
           Available Jobs 
           <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-            {jobs.length} Opportunities
+            {displayedJobs.length} Opportunities
           </span>
         </h2>
         
@@ -236,7 +271,7 @@ const StudentJobs: React.FC = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground text-sm font-medium">Fetching job listings...</p>
           </div>
-        ) : jobs.length === 0 ? (
+        ) : displayedJobs.length === 0 ? (
           <Card className="p-12 flex flex-col items-center justify-center text-center gap-3">
             <AlertCircle className="h-10 w-10 text-muted-foreground" />
             <h3 className="font-bold text-lg">No Jobs Found</h3>
@@ -244,14 +279,14 @@ const StudentJobs: React.FC = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {jobs.map(job => (
-              <Card key={job._id} className="p-6 flex flex-col gap-5 border border-border bg-card hover:shadow-md hover:border-border-hover transition-all duration-200 group cursor-pointer">
+            {displayedJobs.map(job => (
+              <Card key={job._id} className="p-6 flex flex-col gap-5 border border-border bg-card hover:shadow-md hover:border-border-hover transition-all duration-200 group cursor-pointer relative">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-4 w-full">
                     <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0 border border-primary/10">
                       {job.company?.name?.charAt(0) || 'J'}
                     </div>
-                    <div className="overflow-hidden w-full">
+                    <div className="overflow-hidden w-full pr-8">
                       <h3 className="font-bold text-base leading-tight text-foreground transition-colors group-hover:text-primary truncate" title={job.title}>
                         {job.title}
                       </h3>
@@ -260,6 +295,26 @@ const StudentJobs: React.FC = () => {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Bookmark Button */}
+                  <button 
+                    type="button" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleBookmark(job._id);
+                    }}
+                    className="absolute top-6 right-6 text-muted-foreground hover:text-warning transition-colors"
+                  >
+                    <svg 
+                      className={`h-5 w-5 ${bookmarks.includes(job._id) ? 'fill-warning text-warning' : 'text-muted-foreground'}`}
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2"
+                    >
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                    </svg>
+                  </button>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">

@@ -19,6 +19,8 @@ import StudentApplications from './pages/StudentApplications';
 import StudentDrives from './pages/StudentDrives';
 import StudentInterviews from './pages/StudentInterviews';
 import StudentOffers from './pages/StudentOffers';
+import ResumeBuilder from './pages/ResumeBuilder';
+import Settings from './pages/Settings';
 
 // Recruiter Pages
 import RecruiterJobs from './pages/RecruiterJobs';
@@ -106,7 +108,8 @@ const App: React.FC = () => {
           <Route path="bulk-email" element={<DashboardHomeDispatcher />} />
           <Route path="reports" element={<DashboardHomeDispatcher />} />
           <Route path="users" element={<DashboardHomeDispatcher />} />
-          <Route path="settings" element={<DashboardHomeDispatcher />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="resume-builder" element={<ResumeBuilder />} />
           <Route path="audit" element={<DashboardHomeDispatcher />} />
           <Route path="health" element={<DashboardHomeDispatcher />} />
           <Route path="notifications" element={<DashboardHomeDispatcher />} />

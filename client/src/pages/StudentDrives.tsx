@@ -71,7 +71,7 @@ const StudentDrives: React.FC = () => {
       toast.success('Successfully registered for the placement drive!');
       fetchDrives();
       if (selectedDrive?._id === driveId) {
-        const currentUserId = user?.id || user?._id || '';
+        const currentUserId = (user as any)?.id || (user as any)?._id || '';
         setSelectedDrive((prev) => prev ? { ...prev, registeredStudents: [...prev.registeredStudents, currentUserId] } : null);
       }
     } catch (error: any) {
@@ -106,7 +106,7 @@ const StudentDrives: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {drives.map(drive => {
-            const isRegistered = drive.registeredStudents.includes(user?.id || user?._id || '');
+            const isRegistered = drive.registeredStudents.includes((user as any)?.id || (user as any)?._id || '');
             const isRegOpen = drive.status === 'registration_open';
             
             return (
@@ -289,7 +289,7 @@ const StudentDrives: React.FC = () => {
             {/* Action Bar */}
             <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setSelectedDrive(null)}>Close</Button>
-              {selectedDrive.registeredStudents.includes(user?.id || user?._id || '') ? (
+              {selectedDrive.registeredStudents.includes((user as any)?.id || (user as any)?._id || '') ? (
                 <Button variant="outline" disabled>Already Registered</Button>
               ) : (
                 <Button 

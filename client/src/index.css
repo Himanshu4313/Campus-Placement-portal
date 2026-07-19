@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* #F8FAFC */
+    --background: 210 40% 98%; /* Softer neutral slate-50 background #F8FAFC */
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -14,41 +14,53 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 243.4 75.4% 58.2%; /* #4F46E5 */
+    --primary: 243.4 75.4% 58.2%; /* Indigo #4F46E5 */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 262.1 83.3% 57.8%; /* #7C3AED */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 188.7 94.5% 42.7%; /* Cyan #06B6D4 */
+    --secondary-foreground: 222.2 84% 4.9%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 188.7 94.5% 42.7%; /* #06B6D4 */
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 262.1 83.3% 57.8%; /* Violet #7C3AED */
+    --accent-foreground: 210 40% 98%;
+
+    --success: 142.1 76.2% 36.3%; /* Emerald #10B981 */
+    --success-foreground: 355.7 100% 97.3%;
+
+    --warning: 37.9 92.1% 50.2%; /* Amber #F59E0B */
+    --warning-foreground: 222.2 84% 4.9%;
+
+    --danger: 350.2 89.5% 60.2%; /* Rose #F43F5E / Red #EF4444 */
+    --danger-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 90%;
     --ring: 243.4 75.4% 58.2%;
 
-    --radius: 0.75rem;
+    --radius: 0.75rem; /* Rounded corners 12px */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%; /* #0F172A */
-    --foreground: 210 40% 98%;
+    --background: 240 10% 3.9%; /* Standard zinc-950 dark background #09090B */
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 6.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 10% 5.9%; /* Card zinc-900 background #0F0F11 */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 243.4 75.4% 58.2%;
+    --accent: 262.1 83.3% 57.8%;
+    --accent-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
   }
 }
 
@@ -78,61 +90,39 @@
   background: rgba(100, 116, 139, 0.4);
 }
 
-/* Glassmorphism utility classes */
-.glass {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+/* Stepper Steeps */
+.step-dot-active {
+  @apply bg-primary text-white border-primary;
+}
+.step-dot-completed {
+  @apply bg-success border-success text-white;
+}
+.step-dot-inactive {
+  @apply bg-muted border-border text-muted-foreground;
 }
 
-.dark .glass {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+/* Kanban Board Columns */
+.kanban-board {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
 }
 
-/* Hover glow effects */
-.hover-glow {
-  position: relative;
-  transition: all 0.3s ease;
-}
-.hover-glow::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  box-shadow: 0 0 16px 2px rgba(79, 70, 229, 0.2);
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.hover-glow:hover::after {
-  opacity: 1;
+.kanban-column {
+  flex: 1;
+  min-width: 280px;
+  max-width: 350px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
 }
 
-/* Custom UI Helper Styles */
-.card-shine {
-  position: relative;
-  overflow: hidden;
-}
-.card-shine::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: skewX(-25deg);
-  transition: 0.75s;
-}
-.card-shine:hover::before {
-  left: 125%;
+.dark .kanban-column {
+  background: rgba(24, 24, 27, 0.4);
+  border: 1px solid rgba(63, 63, 70, 0.4);
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Briefcase, ChevronRight, Search, Filter, X, Loader2, Info, Calendar, Ban, Award, CheckCircle } from 'lucide-react';
+import { Briefcase, ChevronRight, Search, Filter, X, Loader2, Info, Calendar, Ban, Award, CheckCircle, Kanban, TableProperties } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -45,6 +45,7 @@ const StudentApplications: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   
   // Details Modal State
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -96,6 +97,15 @@ const StudentApplications: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Kanban Columns Definition
+  const kanbanColumns = [
+    { id: 'applied', title: 'Applied', color: 'border-t-primary' },
+    { id: 'under_review', title: 'Under Review', color: 'border-t-info' },
+    { id: 'shortlisted', title: 'Shortlisted', color: 'border-t-warning' },
+    { id: 'selected', title: 'Selected', color: 'border-t-success' },
+    { id: 'rejected', title: 'Rejected', color: 'border-t-destructive' }
+  ];
+
   return (
     <div className="flex flex-col gap-8 w-full pb-10 animate-in fade-in duration-500">
       
@@ -105,40 +115,63 @@ const StudentApplications: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight">My Applications</h1>
           <p className="text-muted-foreground mt-1">Track the status of all your job applications in one place.</p>
         </div>
-        <div className="flex flex-wrap gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* View mode toggle */}
+          <div className="flex bg-muted p-1 rounded-lg border border-border">
+            <button 
+              onClick={() => setViewMode('table')} 
+              className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                viewMode === 'table' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <TableProperties className="h-3.5 w-3.5" /> Table
+            </button>
+            <button 
+              onClick={() => setViewMode('kanban')} 
+              className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                viewMode === 'kanban' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Kanban className="h-3.5 w-3.5" /> Kanban
+            </button>
+          </div>
+
           <div className="relative flex-1 md:flex-initial">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input 
               type="text" 
-              placeholder="Search by company or role..." 
+              placeholder="Search..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none w-full md:w-64"
+              className="pl-9 pr-4 py-2 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none w-full md:w-48 lg:w-60"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="p-2 py-1.5 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
-            >
-              <option value="">All Statuses</option>
-              <option value="applied">Applied</option>
-              <option value="under_review">Under Review</option>
-              <option value="shortlisted">Shortlisted</option>
-              <option value="interview_scheduled">Interview Scheduled</option>
-              <option value="selected">Selected</option>
-              <option value="offer_released">Offer Released</option>
-              <option value="offer_accepted">Offer Accepted</option>
-              <option value="rejected">Rejected</option>
-              <option value="withdrawn">Withdrawn</option>
-            </select>
-          </div>
+          
+          {viewMode === 'table' && (
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="p-2 py-1.5 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="applied">Applied</option>
+                <option value="under_review">Under Review</option>
+                <option value="shortlisted">Shortlisted</option>
+                <option value="interview_scheduled">Interview Scheduled</option>
+                <option value="selected">Selected</option>
+                <option value="offer_released">Offer Released</option>
+                <option value="offer_accepted">Offer Accepted</option>
+                <option value="rejected">Rejected</option>
+                <option value="withdrawn">Withdrawn</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Applications Table Card */}
+      {/* Applications Table / Kanban */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -150,7 +183,7 @@ const StudentApplications: React.FC = () => {
           <span className="text-lg font-bold text-muted-foreground">No applications found</span>
           <p className="text-sm text-muted-foreground">Try adjusting your filters or search terms.</p>
         </Card>
-      ) : (
+      ) : viewMode === 'table' ? (
         <Card className="overflow-hidden border border-border/50 shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -203,6 +236,53 @@ const StudentApplications: React.FC = () => {
             </table>
           </div>
         </Card>
+      ) : (
+        /* Kanban Board View */
+        <div className="kanban-board select-none">
+          {kanbanColumns.map(col => {
+            const colApps = filteredApps.filter(app => {
+              if (col.id === 'selected') {
+                return ['selected', 'offer_released', 'offer_accepted'].includes(app.status);
+              }
+              if (col.id === 'rejected') {
+                return ['rejected', 'withdrawn'].includes(app.status);
+              }
+              return app.status === col.id;
+            });
+
+            return (
+              <div key={col.id} className={`kanban-column border-t-4 ${col.color}`}>
+                <div className="flex justify-between items-center mb-2 px-1">
+                  <span className="font-bold text-sm text-foreground">{col.title}</span>
+                  <span className="text-xs font-semibold bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{colApps.length}</span>
+                </div>
+                <div className="flex flex-col gap-2 overflow-y-auto max-h-[60vh] pr-1">
+                  {colApps.map(app => (
+                    <Card 
+                      key={app._id} 
+                      onClick={() => setSelectedApp(app)}
+                      className="p-4 border border-border/80 bg-white dark:bg-card hover:border-primary/50 cursor-pointer shadow-sm hover:shadow transition-all duration-200"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-6 w-6 rounded bg-muted flex items-center justify-center font-bold text-xs text-primary shrink-0">
+                          {app.job?.company?.name?.charAt(0) || 'C'}
+                        </div>
+                        <span className="text-xs font-bold text-muted-foreground truncate">{app.job?.company?.name}</span>
+                      </div>
+                      <h4 className="font-bold text-sm text-foreground line-clamp-1 leading-snug">{app.job?.title}</h4>
+                      <p className="text-[10px] text-muted-foreground mt-2">Applied: {new Date(app.appliedAt).toLocaleDateString()}</p>
+                    </Card>
+                  ))}
+                  {colApps.length === 0 && (
+                    <div className="border border-dashed border-border/60 rounded-xl py-8 text-center text-xs text-muted-foreground/60">
+                      Empty column
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Details Drawer / Modal */}

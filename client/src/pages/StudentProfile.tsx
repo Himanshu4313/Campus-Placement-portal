@@ -4,7 +4,7 @@ import { RootState } from '../store';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { FileText, Edit2, Plus, UploadCloud, GraduationCap, MapPin, Loader2, Star, Trash2 } from 'lucide-react';
+import { FileText, Edit2, Plus, UploadCloud, GraduationCap, MapPin, Loader2, Star, Trash2, Award, Trash } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -18,11 +18,17 @@ interface Resume {
 
 const StudentProfile: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [activeTab, setActiveTab] = useState<'personal' | 'education' | 'resume'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'education' | 'skills' | 'resume'>('personal');
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingEducation, setIsEditingEducation] = useState(false);
+  
+  // Skills Tab States
+  const [newSkillName, setNewSkillName] = useState('');
+  const [newSkillLevel, setNewSkillLevel] = useState('Intermediate');
+  const [savingSkill, setSavingSkill] = useState(false);
+
   const [formData, setFormData] = useState({
     headline: '',
     bio: '',
@@ -96,7 +102,6 @@ const StudentProfile: React.FC = () => {
     }
   };
 
-
   const handleSaveEducation = async () => {
     setIsSaving(true);
     try {
@@ -120,6 +125,41 @@ const StudentProfile: React.FC = () => {
     }
   };
 
+  const handleAddSkill = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSkillName.trim()) return;
+
+    const currentSkills = profile?.skills || [];
+    if (currentSkills.some((s: any) => s.name.toLowerCase() === newSkillName.trim().toLowerCase())) {
+      toast.error('Skill already exists!');
+      return;
+    }
+
+    setSavingSkill(true);
+    const updatedSkills = [...currentSkills, { name: newSkillName.trim(), level: newSkillLevel }];
+    
+    try {
+      await api.put('/students/profile', { skills: updatedSkills });
+      toast.success('Skill added!');
+      setNewSkillName('');
+      fetchProfile();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add skill');
+    } finally {
+      setSavingSkill(false);
+    }
+  };
+
+  const handleDeleteSkill = async (skillName: string) => {
+    const updatedSkills = (profile?.skills || []).filter((s: any) => s.name !== skillName);
+    try {
+      await api.put('/students/profile', { skills: updatedSkills });
+      toast.success('Skill removed');
+      fetchProfile();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove skill');
+    }
+  };
 
   const fetchResumes = async () => {
     try {
@@ -212,14 +252,14 @@ const StudentProfile: React.FC = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-2">
             <span className="px-3 py-1 bg-secondary/10 text-secondary text-xs font-bold rounded-full">Batch of {profile?.graduationYear || new Date().getFullYear() + 4}</span>
-            <span className="px-3 py-1 bg-muted text-muted-foreground text-xs font-bold rounded-full flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> {profile?.location || 'Not specified'}
+            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5"/> {profile?.location || 'Location Not Specified'}
             </span>
           </div>
         </div>
         
         <Button 
-          className="shrink-0 gap-2" 
+          className="shrink-0 gap-2 text-xs" 
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
         >
@@ -230,7 +270,7 @@ const StudentProfile: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-border">
-        {['personal', 'education', 'resume'].map((tab) => (
+        {['personal', 'education', 'skills', 'resume'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
@@ -248,7 +288,7 @@ const StudentProfile: React.FC = () => {
       {/* Tab Content */}
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
         {activeTab === 'personal' && (
-          <Card className="p-8 flex flex-col gap-6">
+          <Card className="p-8 flex flex-col gap-6 bg-white dark:bg-card">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Personal Information</h2>
               {!isEditing ? (
@@ -305,7 +345,7 @@ const StudentProfile: React.FC = () => {
         )}
 
         {activeTab === 'education' && (
-          <Card className="p-8 flex flex-col gap-6">
+          <Card className="p-8 flex flex-col gap-6 bg-white dark:bg-card">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Academic History</h2>
               {!isEditingEducation ? (
@@ -378,6 +418,65 @@ const StudentProfile: React.FC = () => {
                 onChange={(e) => setFormData({...formData, tenthPercentage: parseFloat(e.target.value) || 0})} 
                 disabled={!isEditingEducation} 
               />
+            </div>
+          </Card>
+        )}
+
+        {activeTab === 'skills' && (
+          <Card className="p-8 flex flex-col gap-6 bg-white dark:bg-card">
+            <div>
+              <h2 className="text-xl font-bold">Skills & Expertise</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Manage the technical capabilities displayed to companies.</p>
+            </div>
+
+            <form onSubmit={handleAddSkill} className="flex gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="E.g., React, TypeScript, Python..."
+                  value={newSkillName}
+                  onChange={e => setNewSkillName(e.target.value)}
+                  className="w-full p-2.5 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="w-40">
+                <select
+                  value={newSkillLevel}
+                  onChange={e => setNewSkillLevel(e.target.value)}
+                  className="w-full p-2.5 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                >
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Expert">Expert</option>
+                </select>
+              </div>
+              <Button type="submit" disabled={savingSkill}>Add</Button>
+            </form>
+
+            <div className="border-t border-border/50 pt-4 mt-2">
+              <h3 className="font-semibold text-sm mb-3">Your Skills</h3>
+              <div className="flex flex-wrap gap-2.5">
+                {(profile?.skills || []).map((skill: any, idx: number) => (
+                  <span 
+                    key={idx} 
+                    className="flex items-center gap-2 bg-primary/5 text-primary text-xs font-bold px-3 py-1.5 rounded-lg border border-primary/10"
+                  >
+                    <span>{skill.name}</span>
+                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">{skill.level}</span>
+                    <button 
+                      type="button" 
+                      onClick={() => handleDeleteSkill(skill.name)}
+                      className="text-primary hover:text-danger ml-1 transition-colors"
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+                {(profile?.skills || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground">Add your first technical skill above.</p>
+                )}
+              </div>
             </div>
           </Card>
         )}
