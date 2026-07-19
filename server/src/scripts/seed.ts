@@ -30,8 +30,7 @@ const seed = async () => {
 
     await clearDB();
 
-    const salt = await bcrypt.genSalt(10);
-    const defaultPassword = await bcrypt.hash('Password123!', salt);
+    const defaultPassword = 'Password123!';
 
     // Create Users
     console.log('👤 Seeding Users...');
