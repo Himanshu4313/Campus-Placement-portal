@@ -2,6 +2,11 @@
 
 An enterprise-ready, premium SaaS platform for managing university campus placements. Built with React 19 + Vite + Tailwind CSS frontend and Node.js + Express + MongoDB backend.
 
+## 🚀 Deployed Links
+- **Frontend App (Vercel):** [https://campus-placement-portal-sand.vercel.app/](https://campus-placement-portal-sand.vercel.app/)
+- **Backend API (Render):** [https://campus-placement-portal-v079.onrender.com/api](https://campus-placement-portal-v079.onrender.com/api)
+
+
 ## System Features
 - **Role-Based Access Control (RBAC)**: Distinct dashboards and permissions for Students, Recruiters, Placement Officers, and Admins.
 - **Enterprise UI/UX**: Inspired by Vercel, Stripe, and Linear dashboards. Complete with premium Glassmorphic panels, dark mode, responsive grids, and micro-interactions.
