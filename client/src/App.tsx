@@ -20,6 +20,31 @@ import StudentDrives from './pages/StudentDrives';
 import StudentInterviews from './pages/StudentInterviews';
 import StudentOffers from './pages/StudentOffers';
 
+// Recruiter Pages
+import RecruiterJobs from './pages/RecruiterJobs';
+import RecruiterApplications from './pages/RecruiterApplications';
+import CandidateSearch from './pages/CandidateSearch';
+import CompanyProfile from './pages/CompanyProfile';
+
+// Route Dispatchers based on role
+const JobsDispatcher: React.FC = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  return user?.role === 'recruiter' ? <RecruiterJobs /> : <StudentJobs />;
+};
+
+const ApplicationsDispatcher: React.FC = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  return user?.role === 'recruiter' ? <RecruiterApplications /> : <StudentApplications />;
+};
+
+const CompanyDispatcher: React.FC = () => {
+  return <CompanyProfile />;
+};
+
+const CandidatesDispatcher: React.FC = () => {
+  return <CandidateSearch />;
+};
+
 // Simple helper to load the dashboard according to user role
 const DashboardHomeDispatcher: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -68,16 +93,16 @@ const App: React.FC = () => {
           {/* Dispatcher loads specific home view depending on role */}
           <Route index element={<DashboardHomeDispatcher />} />
 
-          {/* Student Specific Routes */}
+          {/* Role Specific Routes */}
           <Route path="profile" element={<StudentProfile />} />
-          <Route path="jobs" element={<StudentJobs />} />
-          <Route path="applications" element={<StudentApplications />} />
+          <Route path="jobs" element={<JobsDispatcher />} />
+          <Route path="applications" element={<ApplicationsDispatcher />} />
           <Route path="drives" element={<StudentDrives />} />
           <Route path="interviews" element={<StudentInterviews />} />
           <Route path="offers" element={<StudentOffers />} />
-          <Route path="company" element={<DashboardHomeDispatcher />} />
+          <Route path="company" element={<CompanyDispatcher />} />
           <Route path="companies" element={<DashboardHomeDispatcher />} />
-          <Route path="candidates" element={<DashboardHomeDispatcher />} />
+          <Route path="candidates" element={<CandidatesDispatcher />} />
           <Route path="bulk-email" element={<DashboardHomeDispatcher />} />
           <Route path="reports" element={<DashboardHomeDispatcher />} />
           <Route path="users" element={<DashboardHomeDispatcher />} />
@@ -96,3 +121,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

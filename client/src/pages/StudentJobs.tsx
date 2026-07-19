@@ -1,54 +1,134 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Input } from '../components/Input';
-import { Search, MapPin, Briefcase, DollarSign, Filter, ChevronRight, Building } from 'lucide-react';
+import { Search, MapPin, Briefcase, DollarSign, Filter, ChevronRight, Building, Loader2, X, AlertCircle } from 'lucide-react';
+import api from '../services/api';
+import toast from 'react-hot-toast';
+
+interface Job {
+  _id: string;
+  title: string;
+  company: {
+    _id: string;
+    name: string;
+    logo?: string;
+  };
+  location: string;
+  type: string;
+  workMode?: string;
+  salary?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+  };
+  skills?: string[];
+  description?: string;
+  eligibility?: {
+    minCGPA?: number;
+    maxBacklogs?: number;
+  };
+}
+
+interface Resume {
+  _id: string;
+  name: string;
+  isDefault: boolean;
+}
 
 const StudentJobs: React.FC = () => {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [resumes, setResumes] = useState<Resume[]>([]);
+  
+  // Filter States
+  const [selectedType, setSelectedType] = useState('');
+  const [selectedWorkMode, setSelectedWorkMode] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
 
-  const jobs = [
-    {
-      id: 1,
-      title: 'Software Development Engineer',
-      company: 'TechCorp Inc.',
-      location: 'Bangalore, India',
-      type: 'Full-time',
-      salary: '₹12L - ₹15L',
-      posted: '2 days ago',
-      match: 94,
-    },
-    {
-      id: 2,
-      title: 'Frontend Developer Intern',
-      company: 'Designify Studios',
-      location: 'Remote',
-      type: 'Internship',
-      salary: '₹40k / month',
-      posted: '5 hours ago',
-      match: 88,
-    },
-    {
-      id: 3,
-      title: 'Data Analyst',
-      company: 'FinServe Global',
-      location: 'Mumbai, India',
-      type: 'Full-time',
-      salary: '₹10L - ₹12L',
-      posted: '1 week ago',
-      match: 76,
-    },
-    {
-      id: 4,
-      title: 'Backend Engineer',
-      company: 'CloudWorks',
-      location: 'Hyderabad, India',
-      type: 'Full-time',
-      salary: '₹14L - ₹18L',
-      posted: '3 days ago',
-      match: 91,
+  // Application Modal States
+  const [applyingJob, setApplyingJob] = useState<Job | null>(null);
+  const [selectedResumeId, setSelectedResumeId] = useState('');
+  const [coverLetter, setCoverLetter] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchJobs();
+    fetchResumes();
+  }, []);
+
+  const fetchJobs = async (search = searchQuery, type = selectedType, workMode = selectedWorkMode, loc = locationQuery) => {
+    setLoading(true);
+    try {
+      const params: any = {};
+      if (search) params.search = search;
+      if (type) params.type = type;
+      if (workMode) params.workMode = workMode;
+      if (loc) params.location = loc;
+
+      const res = await api.get('/jobs', { params });
+      setJobs(res.data.data.jobs || []);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load jobs');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const fetchResumes = async () => {
+    try {
+      const res = await api.get('/students/resumes');
+      const resumeList = res.data.data || [];
+      setResumes(resumeList);
+      
+      // Auto-select default resume
+      const defaultRes = resumeList.find((r: Resume) => r.isDefault);
+      if (defaultRes) {
+        setSelectedResumeId(defaultRes._id);
+      } else if (resumeList.length > 0) {
+        setSelectedResumeId(resumeList[0]._id);
+      }
+    } catch (error) {
+      console.error('Failed to fetch resumes', error);
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchJobs();
+  };
+
+  const handleApplyClick = (job: Job) => {
+    if (resumes.length === 0) {
+      toast.error('Please upload a resume in your profile page first before applying.');
+      return;
+    }
+    setApplyingJob(job);
+  };
+
+  const submitApplication = async () => {
+    if (!applyingJob) return;
+    if (!selectedResumeId) {
+      toast.error('Please select a resume');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await api.post(`/jobs/${applyingJob._id}/apply`, {
+        resumeId: selectedResumeId,
+        coverLetter
+      });
+      toast.success(`Applied to ${applyingJob.title} successfully!`);
+      setApplyingJob(null);
+      setCoverLetter('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to submit application');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8 w-full pb-10 animate-in fade-in duration-500">
@@ -60,68 +140,236 @@ const StudentJobs: React.FC = () => {
           <p className="text-muted-foreground mt-1">Find and apply to jobs that match your skills.</p>
         </div>
         
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <input 
-              type="text" 
-              placeholder="Search by job title, company, or keywords..." 
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card shadow-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+        <form onSubmit={handleSearchSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <input 
+                type="text" 
+                placeholder="Search by job title, company, or keywords..." 
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card shadow-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button 
+              type="button"
+              variant="outline" 
+              className={`gap-2 h-auto py-3 px-6 ${showFilters ? 'bg-primary/10 text-primary border-primary' : ''}`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-4 w-4"/> Filters
+            </Button>
+            <Button type="submit" className="h-auto py-3 px-8">Search</Button>
           </div>
-          <Button variant="outline" className="gap-2 h-auto py-3 px-6"><Filter className="h-4 w-4"/> Filters</Button>
-          <Button className="h-auto py-3 px-8">Search</Button>
-        </div>
+
+          {/* Filters Area */}
+          {showFilters && (
+            <Card className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-300">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold">Job Type</label>
+                <select 
+                  className="w-full p-2.5 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                  value={selectedType}
+                  onChange={(e) => {
+                    setSelectedType(e.target.value);
+                    fetchJobs(searchQuery, e.target.value, selectedWorkMode, locationQuery);
+                  }}
+                >
+                  <option value="">All Types</option>
+                  <option value="full-time">Full-time</option>
+                  <option value="part-time">Part-time</option>
+                  <option value="internship">Internship</option>
+                  <option value="contract">Contract</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold">Work Mode</label>
+                <select 
+                  className="w-full p-2.5 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                  value={selectedWorkMode}
+                  onChange={(e) => {
+                    setSelectedWorkMode(e.target.value);
+                    fetchJobs(searchQuery, selectedType, e.target.value, locationQuery);
+                  }}
+                >
+                  <option value="">All Modes</option>
+                  <option value="on-site">On-site</option>
+                  <option value="remote">Remote</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold">Location</label>
+                <input 
+                  type="text"
+                  placeholder="E.g., Bangalore, Delhi"
+                  className="w-full p-2.5 rounded-lg border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      fetchJobs(searchQuery, selectedType, selectedWorkMode, locationQuery);
+                    }
+                  }}
+                />
+              </div>
+            </Card>
+          )}
+        </form>
       </div>
 
       {/* Recommended Jobs Grid */}
       <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">Recommended for You <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">New</span></h2>
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          Available Jobs 
+          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+            {jobs.length} Opportunities
+          </span>
+        </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {jobs.map(job => (
-            <Card key={job.id} className="p-6 flex flex-col gap-5 hover-glow group cursor-pointer transition-all hover:-translate-y-1">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-xl">
-                    {job.company.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">{job.title}</h3>
-                    <p className="text-sm font-medium text-muted-foreground flex items-center gap-1 mt-1">
-                      <Building className="h-3.5 w-3.5" /> {job.company}
-                    </p>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground text-sm font-medium">Fetching job listings...</p>
+          </div>
+        ) : jobs.length === 0 ? (
+          <Card className="p-12 flex flex-col items-center justify-center text-center gap-3">
+            <AlertCircle className="h-10 w-10 text-muted-foreground" />
+            <h3 className="font-bold text-lg">No Jobs Found</h3>
+            <p className="text-muted-foreground max-w-md text-sm">We couldn't find any job opportunities matching your criteria. Try adjusting your search query or filters.</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {jobs.map(job => (
+              <Card key={job._id} className="p-6 flex flex-col gap-5 border border-border bg-card hover:shadow-md hover:border-border-hover transition-all duration-200 group cursor-pointer">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4 w-full">
+                    <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0 border border-primary/10">
+                      {job.company?.name?.charAt(0) || 'J'}
+                    </div>
+                    <div className="overflow-hidden w-full">
+                      <h3 className="font-bold text-base leading-tight text-foreground transition-colors group-hover:text-primary truncate" title={job.title}>
+                        {job.title}
+                      </h3>
+                      <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mt-1.5 truncate">
+                        <Building className="h-3.5 w-3.5 text-muted-foreground/80" /> {job.company?.name || 'Unknown Company'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2.5 py-1 bg-muted rounded-md text-xs font-semibold flex items-center gap-1 text-foreground">
-                  <MapPin className="h-3 w-3" /> {job.location}
-                </span>
-                <span className="px-2.5 py-1 bg-muted rounded-md text-xs font-semibold flex items-center gap-1 text-foreground">
-                  <Briefcase className="h-3 w-3" /> {job.type}
-                </span>
-                <span className="px-2.5 py-1 bg-muted rounded-md text-xs font-semibold flex items-center gap-1 text-foreground">
-                  <DollarSign className="h-3 w-3" /> {job.salary}
-                </span>
-              </div>
-              
-              <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center border border-success/20">
-                    <span className="text-xs font-bold text-success">{job.match}%</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground font-medium">Match Score</span>
+                
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2.5 py-1 bg-muted rounded-md text-xs font-semibold flex items-center gap-1 text-foreground">
+                    <MapPin className="h-3 w-3" /> {job.location}
+                  </span>
+                  <span className="px-2.5 py-1 bg-muted rounded-md text-xs font-semibold flex items-center gap-1 text-foreground">
+                    <Briefcase className="h-3 w-3" /> {job.type} {job.workMode ? `(${job.workMode})` : ''}
+                  </span>
+                  {job.salary && (job.salary.min || job.salary.max) && (
+                    <span className="px-2.5 py-1 bg-muted rounded-md text-xs font-semibold flex items-center gap-1 text-foreground">
+                      <DollarSign className="h-3 w-3" /> 
+                      {job.salary.min ? `${job.salary.min / 100000}L` : ''}
+                      {job.salary.min && job.salary.max ? ' - ' : ''}
+                      {job.salary.max ? `${job.salary.max / 100000}L` : ''} LPA
+                    </span>
+                  )}
                 </div>
-                <Button size="sm" className="gap-1 rounded-full px-5">Apply <ChevronRight className="h-3 w-3" /></Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+
+                {job.skills && job.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {job.skills.slice(0, 3).map((skill, idx) => (
+                      <span key={idx} className="text-[10px] bg-secondary/10 text-secondary px-2 py-0.5 rounded font-semibold">
+                        {skill}
+                      </span>
+                    ))}
+                    {job.skills.length > 3 && (
+                      <span className="text-[10px] text-muted-foreground px-1 py-0.5">
+                        +{job.skills.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground">
+                    {job.eligibility?.minCGPA && (
+                      <div>Min CGPA: <span className="font-semibold text-foreground">{job.eligibility.minCGPA}</span></div>
+                    )}
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="gap-1 rounded-full px-5"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleApplyClick(job);
+                    }}
+                  >
+                    Apply <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Apply Modal */}
+      {applyingJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <Card className="w-full max-w-lg p-8 relative flex flex-col gap-6 animate-in zoom-in-95 duration-200">
+            <button 
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setApplyingJob(null)}
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div>
+              <h2 className="text-xl font-bold">Apply for {applyingJob.title}</h2>
+              <p className="text-sm text-muted-foreground mt-1">{applyingJob.company?.name}</p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold">Select Resume</label>
+                <select 
+                  className="w-full p-3 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                  value={selectedResumeId}
+                  onChange={(e) => setSelectedResumeId(e.target.value)}
+                >
+                  {resumes.map(r => (
+                    <option key={r._id} value={r._id}>
+                      {r.name} {r.isDefault ? '(Default)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold">Cover Letter / Note (Optional)</label>
+                <textarea 
+                  placeholder="Briefly explain why you are a good fit for this role..." 
+                  className="w-full min-h-[120px] p-3 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                  value={coverLetter}
+                  onChange={(e) => setCoverLetter(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-4">
+              <Button variant="outline" onClick={() => setApplyingJob(null)}>Cancel</Button>
+              <Button onClick={submitApplication} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Submit Application
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

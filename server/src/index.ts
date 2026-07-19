@@ -59,6 +59,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(compression());
 
+import path from 'path';
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Sanitize (disabled due to Express 5 compatibility issue with req.query getter)
 // app.use(mongoSanitize());
 

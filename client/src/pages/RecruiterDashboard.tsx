@@ -71,7 +71,7 @@ const RecruiterDashboard: React.FC = () => {
           <p className="text-muted-foreground mt-1">Manage positions, view candidates, and coordinate interviews.</p>
         </div>
         <div className="flex gap-3">
-          <Link to="/dashboard/jobs/new">
+          <Link to="/dashboard/jobs">
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" /> Post New Job
             </Button>

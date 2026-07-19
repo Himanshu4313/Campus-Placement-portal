@@ -20,14 +20,106 @@ const StudentProfile: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [activeTab, setActiveTab] = useState<'personal' | 'education' | 'resume'>('personal');
   const [resumes, setResumes] = useState<Resume[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingEducation, setIsEditingEducation] = useState(false);
+  const [formData, setFormData] = useState({
+    headline: '',
+    bio: '',
+    location: '',
+    linkedin: '',
+    github: '',
+    college: '',
+    university: '',
+    department: '',
+    branch: '',
+    cgpa: 0,
+    tenthPercentage: 0,
+    twelfthPercentage: 0,
+    graduationYear: new Date().getFullYear() + 4
+  });
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    fetchProfile();
     if (activeTab === 'resume') {
       fetchResumes();
     }
   }, [activeTab]);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await api.get('/students/profile');
+      const data = res.data.data;
+      setProfile(data);
+      setFormData({
+        headline: data?.headline || '',
+        bio: data?.bio || '',
+        location: data?.location || '',
+        linkedin: data?.socialLinks?.linkedin || '',
+        github: data?.socialLinks?.github || '',
+        college: data?.college || '',
+        university: data?.university || '',
+        department: data?.department || '',
+        branch: data?.branch || '',
+        cgpa: data?.cgpa || 0,
+        tenthPercentage: data?.tenthPercentage || 0,
+        twelfthPercentage: data?.twelfthPercentage || 0,
+        graduationYear: data?.graduationYear || new Date().getFullYear() + 4
+      });
+    } catch (error) {
+      console.error('Failed to load profile', error);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      await api.put('/students/profile', {
+        headline: formData.headline,
+        bio: formData.bio,
+        location: formData.location,
+        socialLinks: {
+          linkedin: formData.linkedin,
+          github: formData.github
+        }
+      });
+      toast.success('Profile updated successfully');
+      setIsEditing(false);
+      fetchProfile();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
+  const handleSaveEducation = async () => {
+    setIsSaving(true);
+    try {
+      await api.put('/students/profile', {
+        college: formData.college,
+        university: formData.university,
+        department: formData.department,
+        branch: formData.branch,
+        cgpa: Number(formData.cgpa),
+        tenthPercentage: Number(formData.tenthPercentage),
+        twelfthPercentage: Number(formData.twelfthPercentage),
+        graduationYear: Number(formData.graduationYear)
+      });
+      toast.success('Education details updated successfully');
+      setIsEditingEducation(false);
+      fetchProfile();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update education details');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
   const fetchResumes = async () => {
     try {
@@ -103,13 +195,10 @@ const StudentProfile: React.FC = () => {
       />
 
       {/* Header Profile Card */}
-      <Card className="p-8 flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
+      <Card className="p-8 flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden border border-border bg-card">
         <div className="relative group cursor-pointer">
-          <div className="h-28 w-28 rounded-full bg-gradient-to-br from-primary to-accent p-1">
-            <div className="h-full w-full rounded-full bg-card flex items-center justify-center overflow-hidden">
-              <span className="text-4xl font-black text-primary">{user?.name.charAt(0) || 'S'}</span>
-            </div>
+          <div className="h-28 w-28 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
+            <span className="text-4xl font-bold text-foreground">{user?.name.charAt(0) || 'S'}</span>
           </div>
           <div className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
             <Edit2 className="h-4 w-4" />
@@ -118,13 +207,13 @@ const StudentProfile: React.FC = () => {
         
         <div className="flex flex-col flex-1 items-center md:items-start text-center md:text-left gap-2">
           <h1 className="text-3xl font-extrabold">{user?.name || 'Student Name'}</h1>
-          <p className="text-muted-foreground font-medium flex items-center gap-1">
-            <GraduationCap className="h-4 w-4" /> B.Tech Computer Science & Engineering
+          <p className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+            <GraduationCap className="h-4 w-4 text-muted-foreground/80" /> {profile?.department || 'Department'} - {profile?.branch || 'Branch'}
           </p>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-2">
-            <span className="px-3 py-1 bg-secondary/10 text-secondary text-xs font-bold rounded-full">Batch of 2026</span>
+            <span className="px-3 py-1 bg-secondary/10 text-secondary text-xs font-bold rounded-full">Batch of {profile?.graduationYear || new Date().getFullYear() + 4}</span>
             <span className="px-3 py-1 bg-muted text-muted-foreground text-xs font-bold rounded-full flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> New Delhi, India
+              <MapPin className="h-3 w-3" /> {profile?.location || 'Not specified'}
             </span>
           </div>
         </div>
@@ -162,14 +251,55 @@ const StudentProfile: React.FC = () => {
           <Card className="p-8 flex flex-col gap-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Personal Information</h2>
-              <Button variant="ghost" size="sm" className="gap-2"><Edit2 className="h-4 w-4"/> Edit</Button>
+              {!isEditing ? (
+                <Button variant="ghost" size="sm" className="gap-2" onClick={() => setIsEditing(true)}>
+                  <Edit2 className="h-4 w-4"/> Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
+                  <Button size="sm" onClick={handleSaveProfile} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input label="Full Name" defaultValue={user?.name} disabled />
               <Input label="Email Address" defaultValue={user?.email} disabled />
-              <Input label="Phone Number" defaultValue="+91 9876543210" disabled />
-              <Input label="Date of Birth" type="date" defaultValue="2002-05-15" disabled />
-              <Input label="LinkedIn Profile" defaultValue="linkedin.com/in/rohit" disabled className="md:col-span-2" />
+              <Input 
+                label="Headline" 
+                value={formData.headline} 
+                onChange={(e) => setFormData({...formData, headline: e.target.value})} 
+                disabled={!isEditing} 
+                className="md:col-span-2"
+                placeholder="E.g., Aspiring Software Engineer | Competitive Programmer"
+              />
+              <Input 
+                label="Bio" 
+                value={formData.bio} 
+                onChange={(e) => setFormData({...formData, bio: e.target.value})} 
+                disabled={!isEditing} 
+                className="md:col-span-2"
+              />
+              <Input 
+                label="Location" 
+                value={formData.location} 
+                onChange={(e) => setFormData({...formData, location: e.target.value})} 
+                disabled={!isEditing} 
+              />
+              <Input 
+                label="LinkedIn Profile" 
+                value={formData.linkedin} 
+                onChange={(e) => setFormData({...formData, linkedin: e.target.value})} 
+                disabled={!isEditing} 
+              />
+              <Input 
+                label="GitHub Profile" 
+                value={formData.github} 
+                onChange={(e) => setFormData({...formData, github: e.target.value})} 
+                disabled={!isEditing} 
+              />
             </div>
           </Card>
         )}
@@ -178,28 +308,76 @@ const StudentProfile: React.FC = () => {
           <Card className="p-8 flex flex-col gap-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Academic History</h2>
-              <Button variant="outline" size="sm" className="gap-2"><Plus className="h-4 w-4"/> Add Details</Button>
+              {!isEditingEducation ? (
+                <Button variant="ghost" size="sm" className="gap-2" onClick={() => setIsEditingEducation(true)}>
+                  <Edit2 className="h-4 w-4"/> Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditingEducation(false)}>Cancel</Button>
+                  <Button size="sm" onClick={handleSaveEducation} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                  </Button>
+                </div>
+              )}
             </div>
             
-            <div className="flex flex-col gap-6 border-l-2 border-muted pl-6 ml-2">
-              <div className="relative">
-                <div className="absolute -left-[35px] top-1 h-4 w-4 rounded-full bg-primary ring-4 ring-background"></div>
-                <h3 className="font-bold text-lg">B.Tech Computer Science</h3>
-                <p className="text-sm font-semibold text-muted-foreground">University Institute of Technology</p>
-                <div className="mt-2 flex gap-4 text-xs font-medium text-muted-foreground">
-                  <span>2022 - 2026</span>
-                  <span>CGPA: 8.8 / 10.0</span>
-                </div>
-              </div>
-              <div className="relative">
-                <div className="absolute -left-[35px] top-1 h-4 w-4 rounded-full bg-muted ring-4 ring-background"></div>
-                <h3 className="font-bold text-lg">Senior Secondary (Class XII)</h3>
-                <p className="text-sm font-semibold text-muted-foreground">Delhi Public School</p>
-                <div className="mt-2 flex gap-4 text-xs font-medium text-muted-foreground">
-                  <span>2020 - 2022</span>
-                  <span>Percentage: 92%</span>
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input 
+                label="College" 
+                value={formData.college} 
+                onChange={(e) => setFormData({...formData, college: e.target.value})} 
+                disabled={!isEditingEducation} 
+              />
+              <Input 
+                label="University" 
+                value={formData.university} 
+                onChange={(e) => setFormData({...formData, university: e.target.value})} 
+                disabled={!isEditingEducation} 
+              />
+              <Input 
+                label="Department" 
+                value={formData.department} 
+                onChange={(e) => setFormData({...formData, department: e.target.value})} 
+                disabled={!isEditingEducation} 
+              />
+              <Input 
+                label="Branch" 
+                value={formData.branch} 
+                onChange={(e) => setFormData({...formData, branch: e.target.value})} 
+                disabled={!isEditingEducation} 
+              />
+              <Input 
+                label="Current CGPA" 
+                type="number"
+                step="0.01"
+                value={formData.cgpa} 
+                onChange={(e) => setFormData({...formData, cgpa: parseFloat(e.target.value) || 0})} 
+                disabled={!isEditingEducation} 
+              />
+              <Input 
+                label="Graduation Year" 
+                type="number"
+                value={formData.graduationYear} 
+                onChange={(e) => setFormData({...formData, graduationYear: parseInt(e.target.value) || 0})} 
+                disabled={!isEditingEducation} 
+              />
+              <Input 
+                label="Class 12th Percentage" 
+                type="number"
+                step="0.01"
+                value={formData.twelfthPercentage} 
+                onChange={(e) => setFormData({...formData, twelfthPercentage: parseFloat(e.target.value) || 0})} 
+                disabled={!isEditingEducation} 
+              />
+              <Input 
+                label="Class 10th Percentage" 
+                type="number"
+                step="0.01"
+                value={formData.tenthPercentage} 
+                onChange={(e) => setFormData({...formData, tenthPercentage: parseFloat(e.target.value) || 0})} 
+                disabled={!isEditingEducation} 
+              />
             </div>
           </Card>
         )}

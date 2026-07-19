@@ -2,6 +2,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { Request } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -44,6 +45,29 @@ export const uploadToCloudinary = async (
   resourceType: 'image' | 'raw' | 'video' | 'auto' = 'auto',
   publicId?: string
 ): Promise<{ url: string; public_id: string }> => {
+  // Check if Cloudinary is not configured (has placeholder values)
+  if (
+    !process.env.CLOUDINARY_CLOUD_NAME ||
+    process.env.CLOUDINARY_CLOUD_NAME === 'your_cloud_name' ||
+    !process.env.CLOUDINARY_API_KEY ||
+    process.env.CLOUDINARY_API_KEY === 'your_api_key'
+  ) {
+    const uploadDir = path.join(__dirname, '../../uploads', folder);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const ext = resourceType === 'raw' ? '.pdf' : '.png';
+    const filename = `${Date.now()}-${publicId || 'file'}${ext}`;
+    const filePath = path.join(uploadDir, filename);
+    fs.writeFileSync(filePath, buffer);
+
+    const port = process.env.PORT || 5000;
+    return {
+      url: `http://localhost:${port}/uploads/${folder}/${filename}`,
+      public_id: `local_${folder}_${filename}`,
+    };
+  }
+
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
@@ -68,7 +92,22 @@ export const uploadToCloudinary = async (
 };
 
 export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
+  if (publicId.startsWith('local_')) {
+    try {
+      const parts = publicId.split('_');
+      const folder = parts[1];
+      const filename = parts.slice(2).join('_');
+      const filePath = path.join(__dirname, '../../uploads', folder, filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (err) {
+      console.error('Failed to delete local file fallback:', err);
+    }
+    return;
+  }
   await cloudinary.uploader.destroy(publicId);
 };
 
 export default cloudinary;
+
