@@ -146,3 +146,9 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 cd docker
 docker-compose up --build
 ```
+---
+
+## 📞 Support
+
+If you encounter any issues while using this project, please create an issue in the repository. Contributions, suggestions, and feedback are always welcome to help improve the platform.
+---
