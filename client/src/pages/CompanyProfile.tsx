@@ -93,7 +93,7 @@ const CompanyProfile: React.FC = () => {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         setCompany(res.data.data);
-        toast.success('Company profile created successfully!');
+        toast.success('Company profile created successfully.');
       }
       setIsEditing(false);
       fetchCompany();
