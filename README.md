@@ -58,6 +58,32 @@ An enterprise-ready, premium SaaS platform for managing university campus placem
 - Interview Scheduling
 - Placement Offer Tracking
 
+## 🤝 Contribution Guidelines
+
+We welcome contributions from the community.
+
+To contribute:
+
+1. Fork the repository
+2. Create a new feature branch
+3. Commit your changes
+4. Push the branch
+5. Create a Pull Request
+
+Please follow coding standards and write meaningful commit messages.
+## 🔄 Project Workflow
+
+Student Login
+↓
+Complete Profile
+↓
+Apply for Jobs
+↓
+Recruiter Reviews
+↓
+Interview
+↓
+Offer Letter
 ## Getting Started
 
 ### 1. Prerequisite Config
