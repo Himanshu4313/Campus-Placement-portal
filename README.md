@@ -47,6 +47,17 @@ An enterprise-ready, premium SaaS platform for managing university campus placem
 - Added future enhancement section
 - Enhanced README readability
 
+## ✨ Key Highlights
+
+- Role-Based Authentication
+- Secure JWT Login
+- Real-time Notifications
+- Resume Management
+- Placement Analytics
+- Company & Student Dashboard
+- Interview Scheduling
+- Placement Offer Tracking
+
 ## Getting Started
 
 ### 1. Prerequisite Config
