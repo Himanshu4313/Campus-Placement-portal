@@ -41,6 +41,11 @@ An enterprise-ready, premium SaaS platform for managing university campus placem
 ```
 
 ---
+## 📌 Recent Improvements
+
+- Improved project documentation
+- Added future enhancement section
+- Enhanced README readability
 
 ## Getting Started
 
