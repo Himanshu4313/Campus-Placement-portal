@@ -71,6 +71,17 @@ To contribute:
 5. Create a Pull Request
 
 Please follow coding standards and write meaningful commit messages.
+## 🔧 Environment Variables
+
+Create a `.env` file in the server directory and configure the following variables:
+
+- PORT
+- MONGODB_URI
+- JWT_SECRET
+- CLOUDINARY_API_KEY
+- CLOUDINARY_API_SECRET
+- SMTP_EMAIL
+- SMTP_PASSWORD
 ## 📋 Prerequisites
 
 Before running the project, make sure you have:
