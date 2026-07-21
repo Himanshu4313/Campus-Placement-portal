@@ -102,7 +102,6 @@ const startServer = async () => {
 🌐 URL:         http://localhost:${PORT}
 📚 API Docs:    http://localhost:${PORT}/api-docs
 🏥 Health:      http://localhost:${PORT}/health
-🌍 Environment: ${process.env.NODE_ENV}
 ═══════════════════════════════════
       `);
     });
