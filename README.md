@@ -71,6 +71,15 @@ To contribute:
 5. Create a Pull Request
 
 Please follow coding standards and write meaningful commit messages.
+## 📋 Prerequisites
+
+Before running the project, make sure you have:
+
+- Node.js (v18 or above)
+- npm or yarn
+- MongoDB
+- Git
+- Visual Studio Code (Recommended)
 ## 🔄 Project Workflow
 
 Student Login
