@@ -152,3 +152,18 @@ docker-compose up --build
 
 If you encounter any issues while using this project, please create an issue in the repository. Contributions, suggestions, and feedback are always welcome to help improve the platform.
 ---
+---
+
+## 🧪 Testing
+
+The application has been tested for the following scenarios:
+
+- User Authentication
+- Student Registration
+- Recruiter Login
+- Job Posting
+- Resume Upload
+- Job Application Process
+- Dashboard Navigation
+- API Response Validation
+---
